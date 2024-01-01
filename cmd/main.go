@@ -67,7 +67,7 @@ var rootCmd = &cobra.Command{
 		}
 		minHeight := abi.ChainEpoch(minEpoch)
 
-		blocks, err := revenue.MinerFindBlocks(cmd.Context(), api, headTSK,
+		blocks, err := msgfinder.MinerFindBlocks(cmd.Context(), api, headTSK,
 			minerAddr, maxHeight, minHeight, !strict)
 		if err != nil {
 			log.Fatal(err)
