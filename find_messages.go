@@ -4,13 +4,11 @@ import (
 	"context"
 	"errors"
 	"math/big"
-	corebig "math/big"
 	"regexp"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-state-types/abi"
 	lotusapi "github.com/filecoin-project/lotus/api"
-	"github.com/filecoin-project/lotus/build"
 	"github.com/filecoin-project/lotus/chain/types"
 	"github.com/ipfs/go-cid"
 )
@@ -23,9 +21,9 @@ type MinerBlockReward struct {
 	CID      cid.Cid
 }
 
-// MinerFindBlocks gets the list of recently won blocks by a miner
-func MinerFindBlocks(ctx context.Context, api lotusapi.FullNodeStruct,
-	headTSK types.TipSetKey, minerAddr address.Address,
+// AgentFindMessages gets messages sent to an agent
+func AgentFindMessages(ctx context.Context, api lotusapi.FullNodeStruct,
+	headTSK types.TipSetKey, agentID int,
 	maxEpoch abi.ChainEpoch, minEpoch abi.ChainEpoch,
 	ignoreMissingData bool) ([]MinerBlockReward, error) {
 
@@ -34,34 +32,12 @@ func MinerFindBlocks(ctx context.Context, api lotusapi.FullNodeStruct,
 	}
 	var step abi.ChainEpoch = 1000
 
-	rewardActor, _ := address.NewFromString("f02")
-
-	networkPower, err := api.StateMinerPower(ctx, address.Address{}, headTSK)
-	if err != nil {
-		return []MinerBlockReward{}, err
-	}
-	// fmt.Printf("Network power: %+v\n", networkPower)
-
-	minerPower, err := api.StateMinerPower(ctx, minerAddr, headTSK)
-	if err != nil {
-		return []MinerBlockReward{}, err
-	}
-	// fmt.Printf("Miner power: %+v\n", minerPower)
-
-	if minerPower.HasMinPower {
-		winRatio := new(corebig.Rat).SetFrac(
-			types.BigMul(minerPower.MinerPower.QualityAdjPower, types.NewInt(build.BlocksPerEpoch)).Int,
-			networkPower.TotalPower.QualityAdjPower.Int,
-		)
-		// fmt.Printf("Win Ratio: %v\n", winRatio)
-		stepFloat, _ := new(corebig.Rat).Inv(winRatio).Float64()
-		step = abi.ChainEpoch(stepFloat) + 1
-		// fmt.Printf("Step: %v\n", step)
-	}
-
 	checkHeight := maxEpoch
 
-	vestingCID, ts, err := getVestingCIDAndTipSet(ctx, api, minerAddr, headTSK, checkHeight)
+	// Agent 2 (Jim)
+	agentAddr, _ := address.NewFromString("f410f6dy45thxrvar53m4ugimu7yvofamzmwtxrc4aaq")
+
+	vestingCID, ts, err := getVestingCIDAndTipSet(ctx, api, agentAddr, headTSK, checkHeight)
 	if err != nil {
 		return []MinerBlockReward{}, err
 	}

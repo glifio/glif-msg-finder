@@ -7,8 +7,8 @@ import (
 	"math/big"
 	"net/http"
 	"os"
+	"strconv"
 
-	"github.com/filecoin-project/go-address"
 	"github.com/filecoin-project/go-jsonrpc"
 	"github.com/filecoin-project/go-state-types/abi"
 	lotusapi "github.com/filecoin-project/lotus/api"
@@ -24,8 +24,8 @@ func main() {
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "find-blocks <miner-id>",
-	Short: "Find the blocks won by a miner",
+	Use:   "find-messages <agent-id>",
+	Short: "Find the messages sent to an agent",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		rpcUrl := cmd.Flag("rpc-url").Value.String()
@@ -38,10 +38,11 @@ var rootCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		minerAddr, err := address.NewFromString(args[0])
+		agentID, err := strconv.Atoi(args[0])
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		strict, _ := cmd.Flags().GetBool("strict")
 
 		// Use JSON-RPC API to get miner info
@@ -67,18 +68,14 @@ var rootCmd = &cobra.Command{
 		}
 		minHeight := abi.ChainEpoch(minEpoch)
 
-		blocks, err := msgfinder.MinerFindBlocks(cmd.Context(), api, headTSK,
-			minerAddr, maxHeight, minHeight, !strict)
+		msgs, err := msgfinder.AgentFindMessages(cmd.Context(), api, headTSK,
+			agentID, maxHeight, minHeight, !strict)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Results:\n")
-		total := new(big.Int)
-		for _, block := range blocks {
-			total.Add(total, block.Reward)
-			fmt.Printf("%d: %0.09f %s\n", block.Epoch, toFIL(block.Reward), block.CID)
+		for _, msg := range msgs {
+			fmt.Printf("%+v\n", msg)
 		}
-		fmt.Printf("Total: %0.09f\n", toFIL(total))
 	},
 }
 
