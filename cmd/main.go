@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/big"
 	"os"
 	"strconv"
 
+	"github.com/ethereum/go-ethereum/common"
 	msgfinder "github.com/jimpick/glif-msg-finder"
 	"github.com/spf13/cobra"
 )
@@ -78,7 +80,47 @@ var rootCmd = &cobra.Command{
 				log.Fatal(err)
 			}
 			if method != nil {
-				fmt.Printf("%d %s %s %s %+v\n", tx.Height, tx.CID, tx.Status, method.Name, params)
+				paramStr := ""
+				sc, _ := params["sc"].(struct {
+					Vc struct {
+						Issuer          common.Address "json:\"issuer\""
+						Subject         *big.Int       "json:\"subject\""
+						EpochIssued     *big.Int       "json:\"epochIssued\""
+						EpochValidUntil *big.Int       "json:\"epochValidUntil\""
+						Value           *big.Int       "json:\"value\""
+						Action          [4]uint8       "json:\"action\""
+						Target          uint64         "json:\"target\""
+						Claim           []uint8        "json:\"claim\""
+					} "json:\"vc\""
+					V uint8     "json:\"v\""
+					R [32]uint8 "json:\"r\""
+					S [32]uint8 "json:\"s\""
+				})
+				vc := sc.Vc
+				switch name := method.Name; name {
+				case "addMiner":
+					paramStr = fmt.Sprintf("f0%d", vc.Target)
+				case "removeMiner":
+					paramStr = fmt.Sprintf("f0%d -> New owner: f0%d", vc.Target, params["newMinerOwner"])
+				case "pay":
+					paramStr = fmt.Sprintf("%v", vc.Value)
+				case "borrow":
+					paramStr = fmt.Sprintf("%v", vc.Value)
+				case "pullFunds":
+					paramStr = fmt.Sprintf("%v from f0%d", vc.Value, vc.Target)
+				case "pushFunds":
+					paramStr = fmt.Sprintf("%v to f0%d", vc.Value, vc.Target)
+				case "withdraw":
+					paramStr = fmt.Sprintf("%v to %v", vc.Value, params["receiver"])
+				case "setRecovered":
+				case "confirmChangeMinerWorker":
+					paramStr = fmt.Sprintf("f0%d", params["miner"])
+				case "changeMinerWorker":
+					paramStr = fmt.Sprintf("f0%d -> New worker: f0%v, New control addresses: %v", params["miner"], params["worker"], params["controlAddresses"])
+				default:
+					paramStr = fmt.Sprintf("%+v", params)
+				}
+				fmt.Printf("%d %s %s %s\n", tx.Height, tx.CID, method.Name, paramStr)
 			}
 		}
 	},
