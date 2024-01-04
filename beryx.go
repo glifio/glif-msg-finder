@@ -117,7 +117,6 @@ func (td *TransactionDetail) ParseParams() (*abi.Method, map[string]interface{},
 	if td.TxMetaData.Params == nil || td.TxMetaData.Params == "" {
 		return nil, nil, nil
 	}
-	// fmt.Println("Jim2")
 	p, ok := td.TxMetaData.Params.(string)
 	if !ok {
 		return nil, nil, nil
@@ -126,6 +125,10 @@ func (td *TransactionDetail) ParseParams() (*abi.Method, map[string]interface{},
 	// fmt.Printf("Params: %+v\n", td.TxMetaData.Params)
 	data := common.FromHex(p)
 	// fmt.Printf("Params bytes: %+v\n", data)
+
+	if len(data) == 0 {
+		return nil, nil, nil
+	}
 	reader := bytes.NewReader(data)
 
 	var paramsBytes []byte

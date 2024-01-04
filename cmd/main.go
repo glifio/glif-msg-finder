@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/params"
 	msgfinder "github.com/jimpick/glif-msg-finder"
 	"github.com/spf13/cobra"
 )
@@ -79,7 +80,9 @@ var rootCmd = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
-			if method != nil {
+			if method == nil {
+				fmt.Printf("%d %s\n", tx.Height, tx.CID)
+			} else {
 				paramStr := ""
 				sc, _ := params["sc"].(struct {
 					Vc struct {
@@ -103,16 +106,17 @@ var rootCmd = &cobra.Command{
 				case "removeMiner":
 					paramStr = fmt.Sprintf("f0%d -> New owner: f0%d", vc.Target, params["newMinerOwner"])
 				case "pay":
-					paramStr = fmt.Sprintf("%v", vc.Value)
+					paramStr = fmt.Sprintf("%0.2f", ToFIL(vc.Value))
 				case "borrow":
-					paramStr = fmt.Sprintf("%v", vc.Value)
+					paramStr = fmt.Sprintf("%0.2f", ToFIL(vc.Value))
 				case "pullFunds":
-					paramStr = fmt.Sprintf("%v from f0%d", vc.Value, vc.Target)
+					paramStr = fmt.Sprintf("%0.2f from f0%d", ToFIL(vc.Value), vc.Target)
 				case "pushFunds":
-					paramStr = fmt.Sprintf("%v to f0%d", vc.Value, vc.Target)
+					paramStr = fmt.Sprintf("%0.2f to f0%d", ToFIL(vc.Value), vc.Target)
 				case "withdraw":
-					paramStr = fmt.Sprintf("%v to %v", vc.Value, params["receiver"])
+					paramStr = fmt.Sprintf("%0.2f to %v", ToFIL(vc.Value), params["receiver"])
 				case "setRecovered":
+				case "refreshRoutes":
 				case "confirmChangeMinerWorker":
 					paramStr = fmt.Sprintf("f0%d", params["miner"])
 				case "changeMinerWorker":
@@ -130,4 +134,11 @@ func init() {
 	rootCmd.Flags().Uint64("max-epoch", math.MaxUint64, "The minimum epoch")
 	rootCmd.Flags().Uint64("min-epoch", 0, "The minimum epoch")
 	rootCmd.Flags().Bool("strict", false, "Fail if node doesn't have enough data")
+}
+
+func ToFIL(atto *big.Int) *big.Float {
+	f := new(big.Float)
+	f.SetPrec(236)
+	f.SetMode(big.ToNearestEven)
+	return f.Quo(f.SetInt(atto), big.NewFloat(params.Ether))
 }
