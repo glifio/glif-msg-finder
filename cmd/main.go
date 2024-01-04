@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"strconv"
 
@@ -22,33 +23,61 @@ var rootCmd = &cobra.Command{
 	Short: "Find the messages sent to an agent",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		/*
-			maxEpoch, err := cmd.Flags().GetUint64("max-epoch")
-			if err != nil {
-				log.Fatal(err)
-			}
-			minEpoch, err := cmd.Flags().GetUint64("min-epoch")
-			if err != nil {
-				log.Fatal(err)
-			}
-		*/
+		ctx := cmd.Context()
+
+		maxEpoch, err := cmd.Flags().GetUint64("max-epoch")
+		if err != nil {
+			log.Fatal(err)
+		}
+		minEpoch, err := cmd.Flags().GetUint64("min-epoch")
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		agentID, err := strconv.Atoi(args[0])
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		agentAddress, err := msgfinder.GetAgentAddress(agentID)
+		agentAddress, err := msgfinder.GetAgentAddress(ctx, agentID)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		fmt.Printf("Address: %v\n", agentAddress)
+
+		txs, err := msgfinder.GetTransactions(ctx, agentAddress)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println("Transactions:")
+		seen := make(map[string]bool)
+		for _, tx := range txs {
+			if tx.Height > maxEpoch {
+				continue
+			}
+			if tx.Height < minEpoch {
+				break
+			}
+			if seen[tx.CID] {
+				continue
+			}
+			seen[tx.CID] = true
+
+			txDetail, err := msgfinder.GetTransactionDetail(ctx, tx.SearchID)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Printf("%d %s %s\n", tx.Height, tx.CID, tx.Status)
+			fmt.Printf("%+v\n", txDetail)
+		}
 	},
 }
 
 func init() {
-	rootCmd.Flags().Uint64("max-epoch", 0, "The minimum epoch")
+	rootCmd.Flags().Uint64("max-epoch", math.MaxUint64, "The minimum epoch")
 	rootCmd.Flags().Uint64("min-epoch", 0, "The minimum epoch")
 	rootCmd.Flags().Bool("strict", false, "Fail if node doesn't have enough data")
 }

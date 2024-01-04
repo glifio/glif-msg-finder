@@ -1,10 +1,13 @@
 package msgfinder
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 type AgentRecord struct {
@@ -14,34 +17,34 @@ type AgentRecord struct {
 
 const agentURL = "https://events.glif.link/agent"
 
-func GetAgentAddress(agentID int) (string, error) {
-	req, err := http.NewRequest(http.MethodGet, agentURL, nil)
+func GetAgentAddress(ctx context.Context, agentID int) (common.Address, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, agentURL, nil)
 	if err != nil {
-		return "", err
+		return common.Address{}, err
 	}
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", err
+		return common.Address{}, err
 	}
 
 	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
-		return "", err
+		return common.Address{}, err
 	}
 
 	var agents []AgentRecord
 
 	err = json.Unmarshal(resBody, &agents)
 	if err != nil {
-		return "", err
+		return common.Address{}, err
 	}
 
 	for _, agent := range agents {
 		if agent.ID == agentID {
-			return agent.Address, nil
+			return common.HexToAddress(agent.Address), nil
 		}
 	}
 
-	return "", errors.New("agent id not found")
+	return common.Address{}, errors.New("agent id not found")
 }
