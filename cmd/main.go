@@ -81,7 +81,11 @@ var rootCmd = &cobra.Command{
 				log.Fatal(err)
 			}
 			if method == nil {
-				fmt.Printf("%d %s\n", tx.Height, tx.CID)
+				if tx.Type == "Send" {
+					fmt.Printf("%d %s incoming %0.2f from %v\n", tx.Height, tx.CID, ToFIL(tx.Amount), tx.From)
+				} else {
+					fmt.Printf("%d %s unknown: %s\n", tx.Height, tx.CID, tx.Type)
+				}
 			} else {
 				paramStr := ""
 				sc, _ := params["sc"].(struct {

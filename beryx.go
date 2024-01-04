@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/big"
 	"net/http"
 	"os"
 
@@ -22,15 +23,16 @@ type Transactions struct {
 }
 
 type Transaction struct {
-	Height    uint64 `json:"height"`
-	TipsetCID string `json:"tipset_cid"`
-	BlockCID  string `json:"block_cid"`
-	From      string `json:"tx_from"`
-	To        string `json:"tx_to"`
-	CID       string `json:"tx_cid"`
-	Status    string `json:"status"`
-	Type      string `json:"tx_type"`
-	SearchID  string `json:"search_id"`
+	Height    uint64   `json:"height"`
+	TipsetCID string   `json:"tipset_cid"`
+	BlockCID  string   `json:"block_cid"`
+	From      string   `json:"tx_from"`
+	To        string   `json:"tx_to"`
+	Amount    *big.Int `json:"amount"`
+	CID       string   `json:"tx_cid"`
+	Status    string   `json:"status"`
+	Type      string   `json:"tx_type"`
+	SearchID  string   `json:"search_id"`
 }
 
 func GetTransactions(ctx context.Context, agent common.Address) ([]Transaction, error) {
