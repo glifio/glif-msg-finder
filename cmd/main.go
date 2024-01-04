@@ -63,15 +63,23 @@ var rootCmd = &cobra.Command{
 			if seen[tx.CID] {
 				continue
 			}
-			seen[tx.CID] = true
 
 			txDetail, err := msgfinder.GetTransactionDetail(ctx, tx.SearchID)
 			if err != nil {
 				log.Fatal(err)
 			}
+			if txDetail.Level > 0 {
+				continue
+			}
+			seen[tx.CID] = true
 
-			fmt.Printf("%d %s %s\n", tx.Height, tx.CID, tx.Status)
-			fmt.Printf("%+v\n", txDetail)
+			// if abigen.
+
+			params, err := txDetail.ParseParams()
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("%d %s %s %v\n", tx.Height, tx.CID, tx.Status, params)
 		}
 	},
 }

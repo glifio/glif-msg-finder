@@ -1,6 +1,7 @@
 package msgfinder
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"os"
 
 	"github.com/ethereum/go-ethereum/common"
+	cborutil "github.com/filecoin-project/go-cbor-util"
 )
 
 const beryxURL = "https://api.zondax.ch/fil/data/v3/mainnet"
@@ -64,12 +66,13 @@ func GetTransactions(ctx context.Context, agent common.Address) ([]Transaction, 
 }
 
 type TxMetaData struct {
-	Params  string
-	Return  string
+	Params  interface{}
+	Return  interface{}
 	EthLogs []interface{} `json:"ethLogs"`
 }
 
 type TransactionDetail struct {
+	Level      int        `json:"level"`
 	TxMetaData TxMetaData `json:"tx_metadata"`
 }
 
@@ -105,4 +108,27 @@ func GetTransactionDetail(ctx context.Context, searchID string) (TransactionDeta
 	}
 
 	return detail, nil
+}
+
+func (td *TransactionDetail) ParseParams() ([]interface{}, error) {
+	if td.TxMetaData.Params == "" {
+		return nil, nil
+	}
+	p, ok := td.TxMetaData.Params.(string)
+	if !ok {
+		return nil, nil
+	}
+
+	fmt.Printf("Params: %+v\n", td.TxMetaData.Params)
+	data := common.FromHex(p)
+	// fmt.Printf("Params bytes: %+v\n", data)
+	reader := bytes.NewReader(data)
+
+	var paramsBytes []byte
+	err := cborutil.ReadCborRPC(reader, &paramsBytes)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("Params2: %+v\n", paramsBytes)
+	return nil, nil
 }
