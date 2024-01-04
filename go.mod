@@ -27,6 +27,7 @@ require (
 	github.com/crate-crypto/go-kzg-4844 v0.7.0 // indirect
 	github.com/daaku/go.zipexe v1.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
+	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/ethereum/c-kzg-4844 v0.4.0 // indirect
 	github.com/ethereum/go-ethereum v1.13.8 // indirect
@@ -52,6 +53,7 @@ require (
 	github.com/filecoin-project/specs-actors/v5 v5.0.6 // indirect
 	github.com/filecoin-project/specs-actors/v6 v6.0.2 // indirect
 	github.com/filecoin-project/specs-actors/v7 v7.0.1 // indirect
+	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gbrlsnchs/jwt/v3 v3.0.1 // indirect
 	github.com/glifio/go-pools v0.0.0-20231212224409-ef2527da70f5 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
@@ -131,6 +133,8 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/supranational/blst v0.3.11 // indirect
+	github.com/tklauser/go-sysconf v0.3.12 // indirect
+	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/urfave/cli/v2 v2.25.7 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.0.1 // indirect

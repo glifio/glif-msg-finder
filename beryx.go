@@ -9,8 +9,10 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	cborutil "github.com/filecoin-project/go-cbor-util"
+	"github.com/glifio/go-pools/abigen"
 )
 
 const beryxURL = "https://api.zondax.ch/fil/data/v3/mainnet"
@@ -106,20 +108,22 @@ func GetTransactionDetail(ctx context.Context, searchID string) (TransactionDeta
 	if err != nil {
 		return TransactionDetail{}, err
 	}
+	// fmt.Printf("Jim: %+v", detail)
 
 	return detail, nil
 }
 
-func (td *TransactionDetail) ParseParams() ([]interface{}, error) {
-	if td.TxMetaData.Params == "" {
-		return nil, nil
+func (td *TransactionDetail) ParseParams() (*abi.Method, map[string]interface{}, error) {
+	if td.TxMetaData.Params == nil || td.TxMetaData.Params == "" {
+		return nil, nil, nil
 	}
+	// fmt.Println("Jim2")
 	p, ok := td.TxMetaData.Params.(string)
 	if !ok {
-		return nil, nil
+		return nil, nil, nil
 	}
 
-	fmt.Printf("Params: %+v\n", td.TxMetaData.Params)
+	// fmt.Printf("Params: %+v\n", td.TxMetaData.Params)
 	data := common.FromHex(p)
 	// fmt.Printf("Params bytes: %+v\n", data)
 	reader := bytes.NewReader(data)
@@ -127,8 +131,31 @@ func (td *TransactionDetail) ParseParams() ([]interface{}, error) {
 	var paramsBytes []byte
 	err := cborutil.ReadCborRPC(reader, &paramsBytes)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	fmt.Printf("Params2: %+v\n", paramsBytes)
-	return nil, nil
+	// fmt.Printf("Params2: %+v\n", paramsBytes)
+	sig := paramsBytes[0:4]
+	// fmt.Printf("Sig: %+v\n", hex.EncodeToString(sig))
+
+	abi, err := abigen.AgentMetaData.GetAbi()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	method, err := abi.MethodById(sig)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// fmt.Printf("Jim rest: %+v\n", hex.EncodeToString(paramsBytes[4:]))
+	// fmt.Printf("Jim name: %+v\n", method.Name)
+
+	unpackedMap := make(map[string]interface{})
+	err = method.Inputs.UnpackIntoMap(unpackedMap, paramsBytes[4:])
+	if err != nil {
+		return nil, nil, err
+	}
+	// fmt.Printf("Unpacked Map: %+v\n", unpackedMap)
+
+	return method, unpackedMap, nil
 }

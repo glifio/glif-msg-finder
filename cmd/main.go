@@ -73,13 +73,13 @@ var rootCmd = &cobra.Command{
 			}
 			seen[tx.CID] = true
 
-			// if abigen.
-
-			params, err := txDetail.ParseParams()
+			method, params, err := txDetail.ParseParams()
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Printf("%d %s %s %v\n", tx.Height, tx.CID, tx.Status, params)
+			if method != nil {
+				fmt.Printf("%d %s %s %s %+v\n", tx.Height, tx.CID, tx.Status, method.Name, params)
+			}
 		}
 	},
 }
