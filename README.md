@@ -60,7 +60,6 @@ Flags:
   -h, --help             help for find-messages
       --max-epoch uint   The minimum epoch (default 18446744073709551615)
       --min-epoch uint   The minimum epoch
-      --strict           Fail if node doesn't have enough data
 ```
 
 ## License

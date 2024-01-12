@@ -137,7 +137,6 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.Flags().Uint64("max-epoch", math.MaxUint64, "The minimum epoch")
 	rootCmd.Flags().Uint64("min-epoch", 0, "The minimum epoch")
-	rootCmd.Flags().Bool("strict", false, "Fail if node doesn't have enough data")
 }
 
 func ToFIL(atto *big.Int) *big.Float {
