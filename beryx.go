@@ -136,9 +136,9 @@ func (td *TransactionDetail) ParseParams() (*abi.Method, map[string]interface{},
 	var paramsBytes []byte
 	err := cborutil.ReadCborRPC(reader, &paramsBytes)
 	if err != nil {
-		return nil, nil, err
+		// Sometimes the params aren't wrapped in CBOR!
+		paramsBytes = data
 	}
-	// fmt.Printf("Params2: %+v\n", paramsBytes)
 	sig := paramsBytes[0:4]
 	// fmt.Printf("Sig: %+v\n", hex.EncodeToString(sig))
 
