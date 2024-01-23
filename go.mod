@@ -1,4 +1,4 @@
-module github.com/jimpick/glif-msg-finder
+module github.com/glifio/glif-msg-finder
 
 go 1.21.1
 
