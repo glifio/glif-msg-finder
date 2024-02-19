@@ -10,7 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/params"
-	msgfinder "github.com/jimpick/glif-msg-finder"
+	msgfinder "github.com/glifio/glif-msg-finder"
 	"github.com/spf13/cobra"
 )
 
