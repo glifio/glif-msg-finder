@@ -142,25 +142,31 @@ func (td *TransactionDetail) ParseParams() (*abi.Method, map[string]interface{},
 	if len(data) == 0 {
 		return nil, nil, nil
 	}
-	reader := bytes.NewReader(data)
 
-	var paramsBytes []byte
-	err := cborutil.ReadCborRPC(reader, &paramsBytes)
-	if err != nil {
-		// Sometimes the params aren't wrapped in CBOR!
-		paramsBytes = data
-	}
+	var paramsBytes []byte = data
+
 	sig := paramsBytes[0:4]
-	// fmt.Printf("Sig: %+v\n", hex.EncodeToString(sig))
 
 	abi, err := abigen.AgentMetaData.GetAbi()
 	if err != nil {
 		return nil, nil, err
 	}
 
+	// fmt.Printf("Sig: %+v\n", hex.EncodeToString(sig))
+
 	method, err := abi.MethodById(sig)
 	if err != nil {
-		return nil, nil, &MethodLookupError{Err: err}
+		// Try unpacking the params as CBOR
+		reader := bytes.NewReader(data)
+		err := cborutil.ReadCborRPC(reader, &paramsBytes)
+		if err != nil {
+			return nil, nil, &MethodLookupError{Err: err}
+		}
+		sig = paramsBytes[0:4]
+		method, err = abi.MethodById(sig)
+		if err != nil {
+			return nil, nil, &MethodLookupError{Err: err}
+		}
 	}
 
 	unpackedMap := make(map[string]interface{})
