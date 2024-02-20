@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -30,32 +31,33 @@ var rootCmd = &cobra.Command{
 
 		maxEpoch, err := cmd.Flags().GetUint64("max-epoch")
 		if err != nil {
-			log.Fatal(err)
+			log.Panic(err)
 		}
 		minEpoch, err := cmd.Flags().GetUint64("min-epoch")
 		if err != nil {
-			log.Fatal(err)
+			log.Panic(err)
 		}
 
 		agentID, err := strconv.Atoi(args[0])
 		if err != nil {
-			log.Fatal(err)
+			log.Panic(err)
 		}
 
 		agentAddress, err := msgfinder.GetAgentAddress(ctx, agentID)
 		if err != nil {
-			log.Fatal(err)
+			log.Panic(err)
 		}
 
 		fmt.Printf("Address: %v\n", agentAddress)
 
 		txs, err := msgfinder.GetTransactions(ctx, agentAddress)
 		if err != nil {
-			log.Fatal(err)
+			log.Panic(err)
 		}
 
 		fmt.Println("Transactions:")
 		seen := make(map[string]bool)
+		sendAmount := make(map[string]*big.Int)
 		for _, tx := range txs {
 			if tx.Height > maxEpoch {
 				continue
@@ -63,28 +65,47 @@ var rootCmd = &cobra.Command{
 			if tx.Height < minEpoch {
 				break
 			}
-			if seen[tx.CID] {
+			txDetail, err := msgfinder.GetTransactionDetail(ctx, tx.SearchID)
+			if err != nil {
+				log.Panic(err)
+			}
+			if txDetail.Level == 0 && seen[tx.CID] {
 				continue
 			}
 
-			txDetail, err := msgfinder.GetTransactionDetail(ctx, tx.SearchID)
-			if err != nil {
-				log.Fatal(err)
-			}
 			if txDetail.Level > 0 {
+				method, _, err := txDetail.ParseParams()
+				if err != nil {
+					log.Panic(err)
+				}
+				if method == nil {
+					if tx.Type == "Send" {
+						sendAmount[tx.CID] = tx.Amount
+						// fmt.Printf("%d %s (Internal) incoming %0.2f from %v\n", tx.Height, tx.CID, ToFIL(tx.Amount), tx.From)
+					}
+				}
+				continue
+			}
+			if seen[tx.CID] {
 				continue
 			}
 			seen[tx.CID] = true
 
 			method, params, err := txDetail.ParseParams()
 			if err != nil {
-				log.Fatal(err)
+				var methodLookupError *msgfinder.MethodLookupError
+				if errors.As(err, &methodLookupError) {
+					fmt.Printf("%d %s error: %v\n", tx.Height, tx.CID, err)
+					continue
+				} else {
+					log.Panic(err)
+				}
 			}
 			if method == nil {
 				if tx.Type == "Send" {
 					fmt.Printf("%d %s incoming %0.2f from %v\n", tx.Height, tx.CID, ToFIL(tx.Amount), tx.From)
 				} else {
-					fmt.Printf("%d %s unknown: %s\n", tx.Height, tx.CID, tx.Type)
+					fmt.Printf("%d %s unknown: %s params: %v\n", tx.Height, tx.CID, tx.Type, txDetail.TxMetaData.Params)
 				}
 			} else {
 				paramStr := ""
@@ -114,7 +135,13 @@ var rootCmd = &cobra.Command{
 				case "borrow":
 					paramStr = fmt.Sprintf("%0.2f", ToFIL(vc.Value))
 				case "pullFunds":
-					paramStr = fmt.Sprintf("%0.2f from f0%d", ToFIL(vc.Value), vc.Target)
+					// If the send internal transaction was not found, set the value to zero
+					if sendAmount[tx.CID] == nil {
+						sendAmount[tx.CID] = big.NewInt(0)
+						fmt.Println("Warning: internal send transaction for pullFunds not found!")
+					}
+					sentAmount := sendAmount[tx.CID]
+					paramStr = fmt.Sprintf("%0.2f from f0%d (%0.2f requested)", ToFIL(sentAmount), vc.Target, ToFIL(vc.Value))
 				case "pushFunds":
 					paramStr = fmt.Sprintf("%0.2f to f0%d", ToFIL(vc.Value), vc.Target)
 				case "withdraw":

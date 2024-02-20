@@ -35,6 +35,14 @@ type Transaction struct {
 	SearchID  string   `json:"search_id"`
 }
 
+type MethodLookupError struct {
+	Err error
+}
+
+func (r *MethodLookupError) Error() string {
+	return fmt.Sprintf("%v", r.Err)
+}
+
 func GetTransactions(ctx context.Context, agent common.Address) ([]Transaction, error) {
 	url := fmt.Sprintf("%s/transactions/address/%v/receiver", beryxURL, agent)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -102,7 +110,10 @@ func GetTransactionDetail(ctx context.Context, searchID string) (TransactionDeta
 	if err != nil {
 		return TransactionDetail{}, err
 	}
-	// fmt.Println(string(resBody))
+	/*
+		fmt.Println("Detail:")
+		fmt.Println(string(resBody))
+	*/
 
 	var detail TransactionDetail
 
@@ -149,11 +160,8 @@ func (td *TransactionDetail) ParseParams() (*abi.Method, map[string]interface{},
 
 	method, err := abi.MethodById(sig)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, &MethodLookupError{Err: err}
 	}
-
-	// fmt.Printf("Jim rest: %+v\n", hex.EncodeToString(paramsBytes[4:]))
-	// fmt.Printf("Jim name: %+v\n", method.Name)
 
 	unpackedMap := make(map[string]interface{})
 	err = method.Inputs.UnpackIntoMap(unpackedMap, paramsBytes[4:])
