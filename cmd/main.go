@@ -90,6 +90,9 @@ var rootCmd = &cobra.Command{
 				continue
 			}
 			seen[tx.CID] = true
+			if tx.Status != "Ok" {
+				continue
+			}
 
 			method, params, err := txDetail.ParseParams()
 			if err != nil {
