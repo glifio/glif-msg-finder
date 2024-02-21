@@ -141,7 +141,7 @@ var rootCmd = &cobra.Command{
 					// If the send internal transaction was not found, set the value to zero
 					if sendAmount[tx.CID] == nil {
 						sendAmount[tx.CID] = big.NewInt(0)
-						fmt.Println("Warning: internal send transaction for pullFunds not found!")
+						// fmt.Println("Warning: internal send transaction for pullFunds not found!")
 					}
 					sentAmount := sendAmount[tx.CID]
 					paramStr = fmt.Sprintf("%0.2f from f0%d (%0.2f requested)", ToFIL(sentAmount), vc.Target, ToFIL(vc.Value))
